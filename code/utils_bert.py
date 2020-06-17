@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from transformers import BertModel, BertTokenizer
 from tqdm import tqdm
+import gc
 
 model_class = BertModel
 tokenizer_class = BertTokenizer
@@ -15,14 +16,16 @@ def get_embedding_dict(input_file, output_dict_path):
     string_to_embedding = {}
     
     lines = open(input_file, 'r').readlines()
-    for line in tqdm(lines):
+    print(f"string_to_embedding of size {len(lines)} saving to {output_dict_path}")
+
+    for line in lines:
         parts = line[:-1].split('\t')
         string = parts[1]
         embedding = get_embedding(string, tokenizer, model)
         string_to_embedding[string] = embedding
 
     utils_common.save_pickle(output_dict_path, string_to_embedding)
-    print(f"string_to_embedding of size {len(string_to_embedding)} saved to {output_dict_path}")
+    gc.collect()
 
 # Encode text
 def get_embedding(input_string, tokenizer, model):

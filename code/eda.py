@@ -170,7 +170,7 @@ def add_word(new_words):
 # main data augmentation function
 ########################################################################
 
-def get_swap_sentences(sentence, n_aug=5, alpha_rs=0.2):
+def get_swap_sentences(sentence, n_aug, alpha):
 	
 	sentence = get_only_chars(sentence)
 	words = sentence.split(' ')
@@ -178,14 +178,14 @@ def get_swap_sentences(sentence, n_aug=5, alpha_rs=0.2):
 	num_words = len(words)
 	augmented_sentences = []
 
-	n_rs = max(1, int(alpha_rs*num_words))
+	n_rs = max(1, int(alpha*num_words))
 	for _ in range(n_aug):
 		a_words = random_swap(words, n_rs)
 		augmented_sentences.append(' '.join(a_words))
 
 	return augmented_sentences
 
-def get_insert_sentences(sentence, n_aug=5, alpha_ri=0.3):
+def get_insert_sentences(sentence, n_aug, alpha):
 	
 	sentence = get_only_chars(sentence)
 	words = sentence.split(' ')
@@ -193,7 +193,7 @@ def get_insert_sentences(sentence, n_aug=5, alpha_ri=0.3):
 	num_words = len(words)
 	augmented_sentences = []
 
-	n_ri = max(1, int(alpha_ri*num_words))
+	n_ri = max(1, int(alpha*num_words))
 
 	for _ in range(n_aug):
 		a_words = random_insertion(words, n_ri)
@@ -201,7 +201,7 @@ def get_insert_sentences(sentence, n_aug=5, alpha_ri=0.3):
 
 	return augmented_sentences
 
-def get_delete_sentences(sentence, n_aug=5, alpha_rd=0.2):
+def get_delete_sentences(sentence, n_aug=10, alpha_rd=0.1):
 	
 	sentence = get_only_chars(sentence)
 	words = sentence.split(' ')
@@ -209,10 +209,8 @@ def get_delete_sentences(sentence, n_aug=5, alpha_rd=0.2):
 	num_words = len(words)
 	augmented_sentences = []
 
-	n_rd = max(1, int(alpha_rd*num_words))
-
 	for _ in range(n_aug):
-		a_words = random_deletion(words, n_rd)
+		a_words = random_deletion(words, alpha_rd)
 		augmented_sentences.append(' '.join(a_words))
 
 	return augmented_sentences
