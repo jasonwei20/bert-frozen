@@ -18,7 +18,7 @@ def get_embedding_dict(input_file, output_dict_path):
     lines = open(input_file, 'r').readlines()
     print(f"string_to_embedding of size {len(lines)} saving to {output_dict_path}")
 
-    for line in lines:
+    for line in tqdm(lines):
         parts = line[:-1].split('\t')
         string = parts[1]
         embedding = get_embedding(string, tokenizer, model)

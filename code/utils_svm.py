@@ -10,6 +10,7 @@ from sklearn.exceptions import ConvergenceWarning
 from statistics import mean, stdev
 import math
 import numpy as np
+import gc
 
 @ignore_warnings(category=ConvergenceWarning)
 def train_svm(  train_x,
@@ -185,3 +186,4 @@ def evaluate_svm_big_ablation(  train_txt_path,
                             f"reg {reg_ratio} + {aug_type}",
                             n_reg_train_x = len(train_x)
                             )
+            gc.collect()
