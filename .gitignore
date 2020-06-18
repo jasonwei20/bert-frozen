@@ -3,3 +3,4 @@ raw/*
 code/__*
 *.pyc
 plots/*
+outputs/*

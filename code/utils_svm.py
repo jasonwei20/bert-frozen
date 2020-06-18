@@ -83,7 +83,7 @@ def train_eval_svm( train_x, train_y,
                     ):
 
     max_iter = 10000 * n_reg_train_x / len(train_x)    
-    print(f"(n={len(train_x)}) for {max_iter} iterations : {train_name}")
+    print(f"(n={len(train_x)}) for {max_iter:.1f} iterations : {train_name}")
     reg_acc_list, insert_acc_list, swap_acc_list = [], [], []
 
     for random_state in [1, 2, 3, 4, 5]:

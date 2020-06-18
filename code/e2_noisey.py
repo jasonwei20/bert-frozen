@@ -1,10 +1,10 @@
 import config, utils_config, utils_mlp
 from pathlib import Path
 
-dataset_name = 'sst2'
+dataset_name = 'subj'
 data_folder = config.data_folders[dataset_name]
 output_folder = Path("outputs")
-exp_id = 1
+exp_id = 2
 
 if __name__ == "__main__":
 
