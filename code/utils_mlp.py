@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import tqdm
+from tqdm import tqdm
 import gc
 
 import utils_autograd_hacks as autograd_hacks
@@ -32,6 +32,8 @@ def train_mlp(
                 test_embedding_path,
                 flip_ratio,
                 num_classes,
+                top_k,
+                annealling,
                 seed_num,
                 performance_writer,
                 ranking_writer,
@@ -60,13 +62,13 @@ def train_mlp(
     num_minibatches_val = int(test_x.shape[0] / minibatch_size)
     val_acc_list = []
 
-    for epoch in range(1, num_epochs + 1):
+    for epoch in tqdm(range(1, num_epochs + 1)):
 
         ######## training ########
         model.train(mode=True)
         train_running_loss, train_running_corrects = 0.0, 0
 
-        train_x, train_y = shuffle(train_x, train_y, random_state = seed_num)
+        train_x, train_y, train_y_orig = shuffle(train_x, train_y, train_y_orig, random_state = seed_num)
 
         for minibatch_num in range(num_minibatches_train):
             
@@ -92,9 +94,9 @@ def train_mlp(
                     idx_to_grad = utils_grad.get_idx_to_grad(model)
                     idx_to_weight_batch = utils_grad.get_idx_to_weight(
                                                                         idx_to_grad, 
-                                                                        annealling_factor=4, 
+                                                                        annealling_factor=annealling, 
                                                                         idx_to_gt=idx_to_gt, 
-                                                                        top_k=6,
+                                                                        top_k=top_k,
                                                                         )
 
                     sorted_d = list(reversed(sorted(idx_to_weight_batch.items(), key=operator.itemgetter(1))))
@@ -104,8 +106,8 @@ def train_mlp(
                     ranking_writer.write(output_line + '\n')
                     top_group_list.append(top_group_noise_ratio)
                     bottom_group_list.append(bottom_group_noise_ratio)
-
-                    print(top_group_noise_ratio, bottom_group_noise_ratio, sorted_d[:3], sorted_d[-3:])
+                    
+                    # print(top_group_noise_ratio, bottom_group_noise_ratio, sorted_d[:3], sorted_d[-3:])
 
                     for i, layer in enumerate(model.modules()):
                         if utils_grad.module_with_params(layer):
@@ -163,9 +165,11 @@ def train_mlp_multiple(
                 num_classes,
                 output_folder,
                 exp_id,
+                top_k,
+                annealling,
                 num_seeds,
                 minibatch_size = 128,
-                num_epochs = 30,
+                num_epochs = 10,
                 criterion = nn.CrossEntropyLoss(),
                 ):
     
@@ -173,9 +177,9 @@ def train_mlp_multiple(
 
     for seed_num in range(num_seeds):
 
-        performance_writer = open(output_folder.joinpath(f"e{exp_id}_r{flip_ratio}_s{seed_num}_performance.csv"), 'w')
+        performance_writer = open(output_folder.joinpath(f"e{exp_id}_r{flip_ratio}_k{top_k}_a{annealling}_s{seed_num}_performance.csv"), 'w')
         performance_writer.write(f"train_loss,train_acc,val_loss,val_acc\n")
-        ranking_writer = open(output_folder.joinpath(f"e{exp_id}_r{flip_ratio}_s{seed_num}_ranking.csv"), 'w')
+        ranking_writer = open(output_folder.joinpath(f"e{exp_id}_r{flip_ratio}_k{top_k}_a{annealling}_s{seed_num}_ranking.csv"), 'w')
         ranking_writer.write(f"epoch,minibatch_num,top_group_noise_ratio,bottom_group_noise_ratio\n")
 
         val_acc = train_mlp(  
@@ -185,6 +189,8 @@ def train_mlp_multiple(
                             test_embedding_path,
                             flip_ratio,
                             num_classes,
+                            top_k,
+                            annealling,
                             seed_num,
                             performance_writer,
                             ranking_writer,
