@@ -3,13 +3,13 @@ from pathlib import Path
 
 dataset_name = 'sst2'
 data_folder = config.data_folders[dataset_name]
+num_classes = config.num_classes_dict[dataset_name]
 output_folder = Path("outputs")
-exp_id = 1
+exp_id = 'sst_1'
 
 if __name__ == "__main__":
 
     train_txt_path, train_embedding_path, test_txt_path, test_embedding_path = utils_config.get_txt_paths(data_folder)
-    num_classes = 2
 
     for flip_ratio in [0.4]:#[0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0]:
 

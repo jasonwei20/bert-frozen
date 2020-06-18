@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import tqdm
+import gc
 
 import utils_autograd_hacks as autograd_hacks
 import utils_grad
@@ -93,7 +94,7 @@ def train_mlp(
                                                                         idx_to_grad, 
                                                                         annealling_factor=4, 
                                                                         idx_to_gt=idx_to_gt, 
-                                                                        top_k=4,
+                                                                        top_k=6,
                                                                         )
 
                     sorted_d = list(reversed(sorted(idx_to_weight_batch.items(), key=operator.itemgetter(1))))
@@ -150,6 +151,7 @@ def train_mlp(
 
         performance_writer.write(f"{train_loss:.3f},{train_acc:.3f},{val_loss:.3f},{val_acc:.3f}\n")
     
+    gc.collect()
     return mean(val_acc_list[-5:])
 
 def train_mlp_multiple(  
@@ -163,7 +165,7 @@ def train_mlp_multiple(
                 exp_id,
                 num_seeds,
                 minibatch_size = 128,
-                num_epochs = 10,
+                num_epochs = 30,
                 criterion = nn.CrossEntropyLoss(),
                 ):
     
@@ -171,9 +173,9 @@ def train_mlp_multiple(
 
     for seed_num in range(num_seeds):
 
-        performance_writer = open(output_folder.joinpath(f"e{exp_id}_s{seed_num}_performance.csv"), 'w')
+        performance_writer = open(output_folder.joinpath(f"e{exp_id}_r{flip_ratio}_s{seed_num}_performance.csv"), 'w')
         performance_writer.write(f"train_loss,train_acc,val_loss,val_acc\n")
-        ranking_writer = open(output_folder.joinpath(f"e{exp_id}_s{seed_num}_ranking.csv"), 'w')
+        ranking_writer = open(output_folder.joinpath(f"e{exp_id}_r{flip_ratio}_s{seed_num}_ranking.csv"), 'w')
         ranking_writer.write(f"epoch,minibatch_num,top_group_noise_ratio,bottom_group_noise_ratio\n")
 
         val_acc = train_mlp(  
@@ -192,6 +194,8 @@ def train_mlp_multiple(
                             )
 
         val_acc_list.append(val_acc)
+
+        performance_writer.close(); ranking_writer.close()
 
     val_acc_stdev = stdev(val_acc_list) if len(val_acc_list) >= 2 else -1 
     return mean(val_acc_list), val_acc_stdev

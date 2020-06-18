@@ -8,5 +8,5 @@ data_folders = {"subj": Path("data/subj"),
 
 num_classes_dict = {"subj": 2,
                     "sst2": 2,
-                    "imdb": 2,
+                    "trec": 6,
                     }

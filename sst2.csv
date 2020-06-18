@@ -37,3 +37,9 @@
 (n=147860) for 500.0 iterations : reg 0.9 + swap
 0.8178,0.7624,0.7660,0.0053,0.0089,0.0034
 (n=29572) for 2500.0 iterations : only insertswap
+0.8298,0.8137,0.8201,0.0068,0.0022,0.0015
+(n=36965) for 2000.0 iterations : reg 0.2 + insertswap
+0.8392,0.8070,0.8130,0.0069,0.0078,0.0063
+(n=24643) for 3000.0405794749017 iterations : reg 0.3 + insertswap
+0.8463,0.8154,0.8163,0.0023,0.0029,0.0015
+(n=18482) for 4000.1082133968184 iterations : reg 0.4 + insertswap
