@@ -46,24 +46,24 @@ if __name__ == "__main__":
 
         insert_folder = utils_config.make_exp_folder(data_folder, f"insert{alpha}")
         insert_train_txt_path, insert_train_embedding_path, _, _ = utils_config.get_txt_paths(insert_folder)
-        utils_processing.augment_insert(train_txt_path, insert_train_txt_path, n_aug=2, alpha=alpha)
-        utils_bert.get_embedding_dict(insert_train_txt_path, insert_train_embedding_path)
+        # utils_processing.augment_insert(train_txt_path, insert_train_txt_path, n_aug=2, alpha=alpha)
+        # utils_bert.get_embedding_dict(insert_train_txt_path, insert_train_embedding_path)
 
         swap_folder = utils_config.make_exp_folder(data_folder, f"swap{alpha}")
         swap_train_txt_path, swap_train_embedding_path, _, _ = utils_config.get_txt_paths(swap_folder)
-        utils_processing.augment_swap(train_txt_path, swap_train_txt_path, n_aug=2, alpha=alpha)
-        utils_bert.get_embedding_dict(swap_train_txt_path, swap_train_embedding_path)
+        # utils_processing.augment_swap(train_txt_path, swap_train_txt_path, n_aug=2, alpha=alpha)
+        # utils_bert.get_embedding_dict(swap_train_txt_path, swap_train_embedding_path)
 
-        # utils_svm.evaluate_svm_big_ablation(train_txt_path,
-        #                                     test_txt_path,
-        #                                     train_embedding_path,
-        #                                     test_embedding_path,
-        #                                     insert_train_txt_path,
-        #                                     insert_test_txt_path,
-        #                                     insert_train_embedding_path,
-        #                                     insert_test_embedding_path,
-        #                                     swap_train_txt_path,
-        #                                     swap_test_txt_path,
-        #                                     swap_train_embedding_path,
-        #                                     swap_test_embedding_path,
-        #                                     )
+        utils_svm.evaluate_svm_big_ablation(train_txt_path,
+                                            test_txt_path,
+                                            train_embedding_path,
+                                            test_embedding_path,
+                                            insert_train_txt_path,
+                                            insert_test_txt_path,
+                                            insert_train_embedding_path,
+                                            insert_test_embedding_path,
+                                            swap_train_txt_path,
+                                            swap_test_txt_path,
+                                            swap_train_embedding_path,
+                                            swap_test_embedding_path,
+                                            )

@@ -1,10 +1,10 @@
 import config, utils_bert, utils_config, utils_svm, utils_processing
 
-data_folder = config.data_folders['sst2']
+data_folder = config.data_folders['trec']
 
 if __name__ == "__main__":
 
-    train_txt_path, train_embedding_path, test_txt_path, test_embedding_path = utils_config.get_txt_paths(data_folder)
+    train_txt_path, train_embedding_path, test_txt_path, test_embedding_path = utils_config.get_txt_paths(data_folder)  
     # utils_bert.get_embedding_dict(train_txt_path, train_embedding_path)
     # utils_bert.get_embedding_dict(test_txt_path, test_embedding_path)
 

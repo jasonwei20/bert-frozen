@@ -24,6 +24,35 @@ def get_x_y(txt_path, embedding_path):
     x, y = shuffle(x, y, random_state = 0)
     return x, y
 
+def find_num_classes(lines):
+
+    highest = 0
+    for line in lines:
+        parts = line[:-1].split('\t')
+        label = int(parts[0])
+        highest = max(highest, label)
+    return highest + 1
+
+def get_x_y_mlp(txt_path, embedding_path):
+    lines = open(txt_path).readlines()
+    string_to_embedding = utils_common.load_pickle(embedding_path)
+
+    num_classes = find_num_classes(lines)
+    x = np.zeros((len(lines), 768))
+    y = np.zeros((len(lines), num_classes))
+
+    for i, line in enumerate(lines):
+        parts = line[:-1].split('\t')
+        label = int(parts[0])
+        string = parts[1]
+        assert string in string_to_embedding
+        embedding = string_to_embedding[string]
+        x[i, :] = embedding
+        y[i, label] = 1
+    
+    x, y = shuffle(x, y, random_state = 0)
+    return x, y
+
 def augment_swap(source_txt_path, target_txt_path, n_aug, alpha):
     
     writer = open(target_txt_path, 'w')

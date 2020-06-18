@@ -2,4 +2,3 @@ data/*
 raw/*
 code/__*
 *.pyc
-code/*
