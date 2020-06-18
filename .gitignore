@@ -2,3 +2,4 @@ data/*
 raw/*
 code/__*
 *.pyc
+plots/*
