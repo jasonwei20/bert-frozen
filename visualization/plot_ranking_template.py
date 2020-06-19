@@ -10,14 +10,19 @@ exp_id = 'temp'
 # select_metric = 'Total Mag'
 
 log_folder_dict = {  
-                    Path(f"outputs/esst_1_r0.4_s0_ranking.csv"): "SST2",
-                    Path(f"outputs/esubj_1_r0.4_s0_ranking.csv"): "SUBJ",
-                    Path(f"outputs/etrec_1_r0.6_s0_ranking.csv"): "TREC",
+                    # Path(f"outputs/esst_1_r0.4_k4_a4_s0_ranking.csv"): "SST2 k=4",
+                    # Path(f"outputs/esst_1_r0.4_k16_a4_s0_ranking.csv"): "SST2 k=16",
+                    # Path(f"outputs/esst_1_r0.4_k32_a4_s0_ranking.csv"): "SST2 k=32",
+                    # Path(f"outputs/esst_1_r0.4_k64_a4_s0_ranking.csv"): "SST2 k=64",
+                    Path(f"outputs/esst_1_r0.2_k10_a4_s0_ranking.csv"): "SST2 k=10",
+                    # Path(f"outputs/etrec_1_r0.6_k16_a4_s0_ranking.csv"): "TREC k=16",
+                    # Path(f"outputs/etrec_1_r0.6_k32_a4_s0_ranking.csv"): "TREC k=32",
+                    # Path(f"outputs/etrec_1_r0.6_k64_a4_s0_ranking.csv"): "TREC k=64",
                     }
 
 def extract_top_ten_list(ranking_path):
 
-    def average_list(l, n=5):
+    def average_list(l, n=20):
         l_avg = []
         for i in range(0, len(l), n):
             avg = mean(l[i:i+n])
@@ -49,7 +54,7 @@ def plot_flipped_ratios(output_path, log_folder_dict):
 
 def extract_bottom_ten_list(ranking_path):
 
-    def average_list(l, n=5):
+    def average_list(l, n=20):
         l_avg = []
         for i in range(0, len(l), n):
             avg = mean(l[i:i+n])

@@ -168,7 +168,7 @@ def train_mlp_multiple(
                 top_k,
                 annealling,
                 num_seeds,
-                minibatch_size = 128,
+                minibatch_size = 32,
                 num_epochs = 10,
                 criterion = nn.CrossEntropyLoss(),
                 ):
