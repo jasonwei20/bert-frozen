@@ -4,6 +4,7 @@ import numpy as np
 from transformers import BertModel, BertTokenizer
 from tqdm import tqdm
 import gc
+from sklearn.metrics.pairwise import cosine_similarity
 
 model_class = BertModel
 tokenizer_class = BertTokenizer
@@ -36,3 +37,16 @@ def get_embedding(input_string, tokenizer, model):
         last_hidden_states = np.mean(last_hidden_states, axis = 1)
         last_hidden_states = last_hidden_states.flatten()
         return last_hidden_states
+
+def compute_sent_similarities(original_sentence, augmented_sentences):
+    
+    original_sentence_embedding = get_embedding(original_sentence, tokenizer, model)
+    
+    cosine_sim_list = []
+    for augmented_sentence in augmented_sentences:
+        augmented_sentence_embedding = get_embedding(augmented_sentence, tokenizer, model)
+        cosine_sim = float(cosine_similarity(X=[original_sentence_embedding], Y=[augmented_sentence_embedding])[0][0])
+        cosine_sim_list.append(cosine_sim)
+    
+    return cosine_sim_list
+    
