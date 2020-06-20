@@ -123,21 +123,21 @@ def evaluate_svm_baselines(     train_txt_path,
                     n_reg_train_x = len(train_x)
                     )
 
-    train_eval_svm( delete_train_x, delete_train_y,
-                    test_x, test_y,
-                    insert_test_x, insert_test_y,
-                    swap_test_x, swap_test_y, 
-                    "delete",
-                    n_reg_train_x = len(train_x)
-                    )
+    # train_eval_svm( delete_train_x, delete_train_y,
+    #                 test_x, test_y,
+    #                 insert_test_x, insert_test_y,
+    #                 swap_test_x, swap_test_y, 
+    #                 "delete",
+    #                 n_reg_train_x = len(train_x)
+    #                 )
 
-    train_eval_svm( eda_train_x, eda_train_y,
-                    test_x, test_y,
-                    insert_test_x, insert_test_y,
-                    swap_test_x, swap_test_y, 
-                    "eda",
-                    n_reg_train_x = len(train_x)
-                    )
+    # train_eval_svm( eda_train_x, eda_train_y,
+    #                 test_x, test_y,
+    #                 insert_test_x, insert_test_y,
+    #                 swap_test_x, swap_test_y, 
+    #                 "eda",
+    #                 n_reg_train_x = len(train_x)
+    #                 )
 
 def evaluate_svm_big_ablation(  train_txt_path,
                                 test_txt_path,
@@ -176,7 +176,7 @@ def evaluate_svm_big_ablation(  train_txt_path,
         #                 n_reg_train_x = len(train_x)
         #                 )
 
-        for reg_ratio in [0.1]: #[0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        for reg_ratio in [0.7, 0.8, 0.9]:#[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
 
             combined_train_x, combined_train_y = combine_training_sets(train_x, train_y, aug_train_x, aug_train_y, reg_ratio = reg_ratio)
             train_eval_svm( combined_train_x, combined_train_y,
