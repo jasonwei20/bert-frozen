@@ -6,7 +6,7 @@ from statistics import mean, stdev
 from tqdm import tqdm
 
 
-def compute_insertswap_similarity(source_txt_path, n_aug=10, alpha=0.3):
+def compute_insertswap_similarity(source_txt_path, n_aug=10, alpha=0.4):
     
     lines = open(source_txt_path, 'r').readlines()
 
@@ -23,7 +23,7 @@ def compute_insertswap_similarity(source_txt_path, n_aug=10, alpha=0.3):
     
     return dataset_cosine_sim_list 
 
-def compute_swap_similarity(source_txt_path, n_aug=10, alpha=0.3):
+def compute_swap_similarity(source_txt_path, n_aug=10, alpha=0.4):
     
     lines = open(source_txt_path, 'r').readlines()
 
@@ -40,7 +40,7 @@ def compute_swap_similarity(source_txt_path, n_aug=10, alpha=0.3):
     
     return dataset_cosine_sim_list
 
-def compute_insert_similarity(source_txt_path, n_aug=10, alpha=0.3):
+def compute_insert_similarity(source_txt_path, n_aug=10, alpha=0.4):
     
     lines = open(source_txt_path, 'r').readlines()
 
@@ -95,9 +95,10 @@ if __name__ == "__main__":
 
 
 
-    for method, name in [   (compute_swap_similarity, 'swap'),
+    for method, name in [   
+                            #(compute_swap_similarity, 'swap'),
                             (compute_insert_similarity, 'insert'),
-                            (compute_insertswap_similarity, 'insertswap'),
+                            # (compute_insertswap_similarity, 'insertswap'),
                             ]:
 
         all_cosine_sim_list = []

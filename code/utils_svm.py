@@ -76,8 +76,8 @@ def combine_training_sets(  train_x,
 
 def train_eval_svm( train_x, train_y,
                     test_x, test_y,
-                    insert_test_x, insert_test_y,
-                    swap_test_x, swap_test_y,
+                    # insert_test_x, insert_test_y,
+                    # swap_test_x, swap_test_y,
                     train_name,
                     n_reg_train_x
                     ):
@@ -89,10 +89,11 @@ def train_eval_svm( train_x, train_y,
     for random_state in [1, 2, 3, 4, 5]:
         clf_reg = train_svm(train_x, train_y, random_state, max_iter = max_iter)
         reg_acc_list.append(evaluate_svm(clf_reg, test_x, test_y))
-        insert_acc_list.append(evaluate_svm(clf_reg, insert_test_x, insert_test_y))
-        swap_acc_list.append(evaluate_svm(clf_reg, swap_test_x, swap_test_y))
+        # insert_acc_list.append(evaluate_svm(clf_reg, insert_test_x, insert_test_y))
+        # swap_acc_list.append(evaluate_svm(clf_reg, swap_test_x, swap_test_y))
     
-    print(f"{mean(reg_acc_list):.4f},{mean(insert_acc_list):.4f},{mean(swap_acc_list):.4f},{stdev(reg_acc_list):.4f},{stdev(insert_acc_list):.4f},{stdev(swap_acc_list):.4f}")
+    print(f"{mean(reg_acc_list):.4f},{stdev(reg_acc_list):.4f}")
+    # print(f"{mean(reg_acc_list):.4f},{mean(insert_acc_list):.4f},{mean(swap_acc_list):.4f},{stdev(reg_acc_list):.4f},{stdev(insert_acc_list):.4f},{stdev(swap_acc_list):.4f}")
 
 def evaluate_svm_baselines(     train_txt_path,
                                 test_txt_path,
@@ -144,28 +145,28 @@ def evaluate_svm_big_ablation(  train_txt_path,
                                 train_embedding_path,
                                 test_embedding_path,
                                 insert_train_txt_path,
-                                insert_test_txt_path,
+                                # insert_test_txt_path,
                                 insert_train_embedding_path,
-                                insert_test_embedding_path,
+                                # insert_test_embedding_path,
                                 swap_train_txt_path,
-                                swap_test_txt_path,
+                                # swap_test_txt_path,
                                 swap_train_embedding_path,
-                                swap_test_embedding_path,
+                                # swap_test_embedding_path,
                                 ):
 
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
     test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
     insert_train_x, insert_train_y = utils_processing.get_x_y(insert_train_txt_path, insert_train_embedding_path)
-    insert_test_x, insert_test_y = utils_processing.get_x_y(insert_test_txt_path, insert_test_embedding_path)
+    # insert_test_x, insert_test_y = utils_processing.get_x_y(insert_test_txt_path, insert_test_embedding_path)
     swap_train_x, swap_train_y = utils_processing.get_x_y(swap_train_txt_path, swap_train_embedding_path)
-    swap_test_x, swap_test_y = utils_processing.get_x_y(swap_test_txt_path, swap_test_embedding_path)
-    insertswap_aug_train_x = np.concatenate((insert_train_x, swap_train_x), axis=0)
-    insertswap_aug_train_y = np.concatenate((insert_train_y, swap_train_y), axis=0)
+    # swap_test_x, swap_test_y = utils_processing.get_x_y(swap_test_txt_path, swap_test_embedding_path)
+    # insertswap_aug_train_x = np.concatenate((insert_train_x, swap_train_x), axis=0)
+    # insertswap_aug_train_y = np.concatenate((insert_train_y, swap_train_y), axis=0)
 
     for aug_train_x, aug_train_y, aug_type in [
-                                                (insert_train_x, insert_train_y, 'insert'),
-                                                (swap_train_x, swap_train_y, 'swap'),
-                                                (insertswap_aug_train_x, insertswap_aug_train_y, 'insertswap'),
+                                                (insert_train_x, insert_train_y, 'delete'),
+                                                (swap_train_x, swap_train_y, 'eda'),
+                                                # (insertswap_aug_train_x, insertswap_aug_train_y, 'insertswap'),
                                                 ]:
 
         # train_eval_svm( aug_train_x, aug_train_y,
@@ -176,13 +177,13 @@ def evaluate_svm_big_ablation(  train_txt_path,
         #                 n_reg_train_x = len(train_x)
         #                 )
 
-        for reg_ratio in [0.7, 0.8, 0.9]:#[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        for reg_ratio in [0.5]:#[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
 
             combined_train_x, combined_train_y = combine_training_sets(train_x, train_y, aug_train_x, aug_train_y, reg_ratio = reg_ratio)
             train_eval_svm( combined_train_x, combined_train_y,
                             test_x, test_y,
-                            insert_test_x, insert_test_y,
-                            swap_test_x, swap_test_y, 
+                            # insert_test_x, insert_test_y,
+                            # swap_test_x, swap_test_y, 
                             f"reg {reg_ratio} + {aug_type}",
                             n_reg_train_x = len(train_x)
                             )
