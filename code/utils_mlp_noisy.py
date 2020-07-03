@@ -89,7 +89,7 @@ def train_mlp(
                 autograd_hacks.compute_grad1(model)
                 
                 #update with weighted gradient
-                if True:
+                if False:
 
                     idx_to_grad = utils_grad.get_idx_to_grad(model)
                     idx_to_weight_batch = utils_grad.get_idx_to_weight(
@@ -151,8 +151,9 @@ def train_mlp(
         val_acc = val_running_corrects / (num_minibatches_val * minibatch_size)
         val_acc_list.append(val_acc)
 
-        performance_writer.write(f"{train_loss:.3f},{train_acc:.3f},{val_loss:.3f},{val_acc:.3f}\n")
-    
+        # performance_writer.write(f"{train_loss:.3f},{train_acc:.3f},{val_loss:.3f},{val_acc:.3f}\n")
+        print(f"{train_loss:.3f},{train_acc:.3f},{val_loss:.3f},{val_acc:.3f}\n")
+
     gc.collect()
     return mean(val_acc_list[-5:])
 
@@ -168,7 +169,7 @@ def train_mlp_multiple(
                 top_k,
                 annealling,
                 num_seeds,
-                minibatch_size = 128,
+                minibatch_size = 64,
                 num_epochs = 10,
                 criterion = nn.CrossEntropyLoss(),
                 ):

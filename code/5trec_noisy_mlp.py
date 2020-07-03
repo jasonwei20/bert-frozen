@@ -27,7 +27,7 @@ if __name__ == "__main__":
                                                                         exp_id,
                                                                         top_k,
                                                                         annealling,
-                                                                        num_seeds=10,
+                                                                        num_seeds=3,
                                                                         )
                 
                 print(f"{flip_ratio},{mean_val_acc:.3f},{stdev_acc:.3f}")

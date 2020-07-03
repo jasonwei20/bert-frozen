@@ -14,8 +14,8 @@ log_folder_dict = {
                     # Path(f"outputs/esst_1_r0.4_k16_a4_s0_ranking.csv"): "SST2 k=16",
                     # Path(f"outputs/esst_1_r0.4_k32_a4_s0_ranking.csv"): "SST2 k=32",
                     # Path(f"outputs/esst_1_r0.4_k64_a4_s0_ranking.csv"): "SST2 k=64",
-                    Path(f"outputs/esst_1_r0.2_k10_a4_s0_ranking.csv"): "SST2 k=10",
-                    # Path(f"outputs/etrec_1_r0.6_k16_a4_s0_ranking.csv"): "TREC k=16",
+                    # Path(f"outputs/esst_1_r0.2_k10_a4_s0_ranking.csv"): "SST2 k=10",
+                    Path(f"outputs/etrec_1_r0.6_k4_a4_s0_ranking.csv"): "TREC k=4",
                     # Path(f"outputs/etrec_1_r0.6_k32_a4_s0_ranking.csv"): "TREC k=32",
                     # Path(f"outputs/etrec_1_r0.6_k64_a4_s0_ranking.csv"): "TREC k=64",
                     }
