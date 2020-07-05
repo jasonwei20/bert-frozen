@@ -46,7 +46,7 @@ def train_mlp_checkpoint(
     np.random.seed(seed_num)
     
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
-    train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=20, random_state=seed_num)
+    train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=20, random_state=seed_num, stratify=train_y)
     # test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
 
     print(train_x.shape, train_y.shape, ul_x.shape, ul_y.shape)

@@ -1,4 +1,4 @@
-import config, utils_config, utils_mlp_mine
+import config, utils_config, utils_mlp_8_knn
 from pathlib import Path
 
 dataset_name = 'sst2'
@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     train_txt_path, train_embedding_path, test_txt_path, test_embedding_path = utils_config.get_txt_paths(data_folder)
 
-    mean_val_acc, stdev_acc = utils_mlp_knn.train_mlp_multiple( train_txt_path,
+    mean_val_acc, stdev_acc = utils_mlp_8_knn.train_mlp_multiple( train_txt_path,
                                                                 train_embedding_path,
                                                                 test_txt_path,
                                                                 test_embedding_path,

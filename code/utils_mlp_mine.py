@@ -48,8 +48,6 @@ def train_mlp(
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
     test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
 
-    train_y, train_y_orig = utils_mlp_helper.get_labels_uniform_flip(train_y, flip_ratio, num_classes)
-
     # print(train_x.shape, train_y.shape, test_x.shape, test_y.shape)
 
     model = Net(num_classes=num_classes)

@@ -22,7 +22,7 @@ if __name__ == "__main__":
                                                                         exp_id,
                                                                         train_subset,
                                                                         minibatch_size=minibatch_size,
-                                                                        num_seeds=1,
+                                                                        num_seeds=10,
                                                                         )
                 
     print(f"{mean_val_acc:.3f},{stdev_acc:.3f}")

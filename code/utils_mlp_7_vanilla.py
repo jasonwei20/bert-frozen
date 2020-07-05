@@ -47,7 +47,7 @@ def train_mlp_checkpoint(
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
     test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
     if train_subset:
-        train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_subset, random_state=42)
+        train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_subset, random_state=42, stratify=train_y)
         test_x = ul_x; test_y = ul_y
 
     print(train_x.shape, train_y.shape, test_x.shape, test_y.shape)

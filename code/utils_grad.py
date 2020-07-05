@@ -1,6 +1,14 @@
 import utils_autograd_hacks as autograd_hacks
 import numpy as np
 
+def get_agreement_list_all(gt_grad_list, candidate_grad_list):
+    agreement_list = []
+    for candidate_grad in candidate_grad_list:
+        for gt_grad in gt_grad_list:
+            agreement = np.dot(candidate_grad, gt_grad)
+            agreement_list.append(agreement)
+    return agreement_list
+
 def module_with_params(module):
     return module.__class__.__name__ in ['Conv2d', 'BatchNorm2d', 'Linear']
 
