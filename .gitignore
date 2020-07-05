@@ -4,3 +4,4 @@ code/__*
 *.pyc
 plots/*
 outputs/*
+checkpoints/*
