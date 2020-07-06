@@ -38,6 +38,7 @@ def train_mlp_checkpoint(
                         seed_num,
                         minibatch_size,
                         num_epochs,
+                        train_size,
                         criterion,
                         checkpoint_folder,
                         ):
@@ -46,7 +47,7 @@ def train_mlp_checkpoint(
     np.random.seed(seed_num)
     
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
-    train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=20, random_state=seed_num, stratify=train_y)
+    train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_size, random_state=seed_num, stratify=train_y)
     # test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
 
     print(train_x.shape, train_y.shape, ul_x.shape, ul_y.shape)
@@ -69,6 +70,7 @@ def train_mlp_multiple(
                         output_folder,
                         exp_id,
                         num_seeds,
+                        train_size,
                         minibatch_size = 5,
                         num_epochs = 20,
                         criterion = nn.CrossEntropyLoss(),
@@ -87,6 +89,7 @@ def train_mlp_multiple(
                             seed_num,
                             minibatch_size,
                             num_epochs,
+                            train_size,
                             criterion,
                             checkpoint_folder = None
                             )

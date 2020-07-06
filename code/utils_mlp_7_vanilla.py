@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import gc
 
@@ -47,10 +48,10 @@ def train_mlp_checkpoint(
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
     test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
     if train_subset:
-        train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_subset, random_state=42, stratify=train_y)
+        train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_subset, random_state=seed_num, stratify=train_y)
         test_x = ul_x; test_y = ul_y
 
-    print(train_x.shape, train_y.shape, test_x.shape, test_y.shape)
+    # print(train_x.shape, train_y.shape, test_x.shape, test_y.shape)
 
     model = Net(num_classes=num_classes)
     optimizer = optim.Adam(params=model.parameters(), lr=0.001, weight_decay=0.05) #wow, works for even large learning rates
@@ -59,8 +60,7 @@ def train_mlp_checkpoint(
     top_group_list, bottom_group_list = [], []
 
     num_minibatches_train = int(train_x.shape[0] / minibatch_size)
-    num_minibatches_val = int(test_x.shape[0] / minibatch_size)
-    val_acc_list = []
+    val_acc_list = []; conf_acc_list = []
 
     if checkpoint_folder:
 
@@ -111,41 +111,51 @@ def train_mlp_checkpoint(
         model.train(mode=False)
         val_running_loss, val_running_corrects = 0.0, 0
 
-        for minibatch_num in range(num_minibatches_val):
-            
-            start_idx = minibatch_num * minibatch_size
-            end_idx = start_idx + minibatch_size
-            val_inputs = torch.from_numpy(test_x[start_idx:end_idx].astype(np.float32))
-            val_labels = torch.from_numpy(test_y[start_idx:end_idx].astype(np.long))
+        val_inputs = torch.from_numpy(test_x.astype(np.float32))
+        val_labels = torch.from_numpy(test_y.astype(np.long))
 
-            # Feed forward.
-            with torch.set_grad_enabled(mode=False):
-                val_outputs = model(val_inputs)
-                _, val_preds = torch.max(val_outputs, dim=1)
-                val_loss = criterion(input=val_outputs, target=val_labels)
-            val_running_loss += val_loss.item() * val_inputs.size(0)
-            val_running_corrects += int(torch.sum(val_preds == val_labels.data, dtype=torch.double))
+        # Feed forward.
+        with torch.set_grad_enabled(mode=False):
+            val_outputs = model(val_inputs)
+            val_confs, val_preds = torch.max(val_outputs, dim=1)
+            val_loss = criterion(input=val_outputs, target=val_labels)
+            val_loss_print = val_loss / val_inputs.shape[0]
+            val_acc = accuracy_score(test_y, val_preds)
+            val_acc_list.append(val_acc)
 
-        val_loss = val_running_loss / (num_minibatches_val * minibatch_size)
-        val_acc = val_running_corrects / (num_minibatches_val * minibatch_size)
-        val_acc_list.append(val_acc)
+            val_preds = val_preds.tolist()
+            val_confs = val_confs.numpy().tolist()
+            val_threshold_idx = int(len(val_confs) / 10)
+            val_conf_threshold = list(sorted(val_confs))[-val_threshold_idx]
 
-        print(f"{train_loss:.3f},{train_acc:.3f},{val_loss:.3f},{val_acc:.3f}\n")
+            confident_predicted_labels = [val_preds[i] for i in range(len(val_confs)) if val_confs[i] >= val_conf_threshold]
+            confident_ul_y = [ul_y[i] for i in range(len(val_confs)) if val_confs[i] >= val_conf_threshold]
+            conf_acc = accuracy_score(confident_ul_y, confident_predicted_labels)
+            conf_acc_list.append(conf_acc)
 
-        if checkpoint_folder:
+        # val_running_loss += val_loss.item() * val_inputs.size(0)
+        # val_running_corrects += int(torch.sum(val_preds == val_labels.data, dtype=torch.double))
 
-            epoch_output_path = checkpoint_folder.joinpath(f"e{epoch}_va{val_acc:.4f}.pt")
-            epoch_output_path.parent.mkdir(parents=True, exist_ok=True)
+        # val_loss = val_running_loss / (num_minibatches_val * minibatch_size)
+        # val_acc = val_running_corrects / (num_minibatches_val * minibatch_size)
+        # val_acc_list.append(val_acc)
 
-            torch.save(obj={
-                            "model_state_dict": model.state_dict(),
-                            "optimizer_state_dict": optimizer.state_dict(),
-                            "scheduler_state_dict": scheduler.state_dict(),
-                            "epoch": epoch,
-                        }, f=str(epoch_output_path))
+        # print(f"{train_loss:.3f},{train_acc:.3f},{val_loss_print:.3f},{val_acc:.3f}\n")
+
+        # if checkpoint_folder:
+
+        #     epoch_output_path = checkpoint_folder.joinpath(f"e{epoch}_va{val_acc:.4f}.pt")
+        #     epoch_output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        #     torch.save(obj={
+        #                     "model_state_dict": model.state_dict(),
+        #                     "optimizer_state_dict": optimizer.state_dict(),
+        #                     "scheduler_state_dict": scheduler.state_dict(),
+        #                     "epoch": epoch,
+        #                 }, f=str(epoch_output_path))
 
     gc.collect()
-    return mean(val_acc_list[-5:])
+    return mean(val_acc_list[-5:]), mean(conf_acc_list[-5:])
 
 def train_mlp_multiple(  
                         train_txt_path,
@@ -162,11 +172,11 @@ def train_mlp_multiple(
                         criterion = nn.CrossEntropyLoss(),
                         ):
 
-    val_acc_list = []
+    val_acc_list = []; conf_acc_list = []
 
     for seed_num in range(num_seeds):
 
-        val_acc = train_mlp_checkpoint(  
+        val_acc, conf_acc = train_mlp_checkpoint(  
                             train_txt_path,
                             train_embedding_path,
                             test_txt_path,
@@ -181,6 +191,8 @@ def train_mlp_multiple(
                             )
 
         val_acc_list.append(val_acc)
+        conf_acc_list.append(conf_acc)
 
     val_acc_stdev = stdev(val_acc_list) if len(val_acc_list) >= 2 else -1 
-    return mean(val_acc_list), val_acc_stdev
+    conf_acc_stdev = stdev(conf_acc_list) if len(conf_acc_list) >= 2 else -1 
+    return mean(val_acc_list), val_acc_stdev, mean(conf_acc_list), conf_acc_stdev

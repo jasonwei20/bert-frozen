@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import gc
 
@@ -53,9 +54,9 @@ def train_mlp_checkpoint(
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
     test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
     if train_subset:
-        train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_subset, random_state=42, stratify=train_y)
+        train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_subset, random_state=seed_num, stratify=train_y)
 
-    print(train_x.shape, train_y.shape, ul_x.shape, ul_y.shape, test_x.shape, test_y.shape)
+    # print(train_x.shape, train_y.shape, ul_x.shape, ul_y.shape, test_x.shape, test_y.shape)
 
     model = Net(num_classes=num_classes)
     optimizer = optim.Adam(params=model.parameters(), lr=0.001, weight_decay=0.05) #wow, works for even large learning rates
@@ -71,11 +72,11 @@ def train_mlp_checkpoint(
     autograd_hacks.add_hooks(model)
     model.train(mode=True)
 
-    ######## training ########
+    ######## train ########
     train_inputs = torch.from_numpy(train_x.astype(np.float32))
     train_labels = torch.from_numpy(train_y.astype(np.long))
     optimizer.zero_grad()
-    train_gradients = {k: {k:[] for k in range(num_classes)} for k in range(num_classes)}
+    train_label_to_grads = {label: [] for label in range(num_classes)}
 
     with torch.set_grad_enabled(mode=True):
         train_outputs = model(train_inputs)
@@ -84,26 +85,23 @@ def train_mlp_checkpoint(
         train_loss.backward(retain_graph=True)
         autograd_hacks.compute_grad1(model)
 
-        # optimizer.step()
+        train_grad_np = utils_grad.get_grad_np(model, global_normalize=True)
+        for i in range(train_grad_np.shape[0]):
+            train_grad = train_grad_np[i]
+            label = int(train_labels[i])
+            train_label_to_grads[label].append(train_grad)
 
-        idx_to_grad = utils_grad.get_idx_to_grad(model, global_normalize=True)
-        for idx, gradient in idx_to_grad.items():
-            gt_label = int(train_labels[idx])
-            given_label = gt_label
-            train_gradients[gt_label][given_label].append(gradient)
-        
+        # optimizer.step()
         autograd_hacks.clear_backprops(model)
-        # print('\n', idx_to_grad[1][-5:])
 
     ######## ul ########
     ul_inputs = torch.from_numpy(ul_x.astype(np.float32))
     ul_labels = torch.from_numpy(ul_y.astype(np.long))
     optimizer.zero_grad()
-    ul_gradients = {k: {k:[] for k in range(num_classes)} for k in range(num_classes)}
+    ul_grad_np_dict = {}
 
     for given_label in range(num_classes):
 
-        # Forward and backpropagation.
         with torch.set_grad_enabled(mode=True):
             ul_outputs = model(ul_inputs)
             __, ul_preds = torch.max(ul_outputs, dim=1)
@@ -112,58 +110,46 @@ def train_mlp_checkpoint(
             ul_loss.backward(retain_graph=True)
             autograd_hacks.compute_grad1(model)
 
-            idx_to_grad = utils_grad.get_idx_to_grad(model)
-            for idx, gradient in idx_to_grad.items():
-                gt_label = int(ul_labels[idx])
-                ul_gradients[gt_label][given_label].append(gradient)
+            grad_np = utils_grad.get_grad_np(model, global_normalize=True)
+            ul_grad_np_dict[given_label] = grad_np
 
             # optimizer.step()
             autograd_hacks.clear_backprops(model)
+    
+    def get_grad_comparison(given_label_to_grad, train_label_to_grads):
+        label_to_max_sim = {}
+        for label, train_grads in train_label_to_grads.items():
+            grad_from_given_label = given_label_to_grad[label]
+            sim_list = [np.dot(grad_from_given_label, train_grad) for train_grad in train_grads]
+            sim_list_sorted = list(sorted(sim_list))
+            max_sim = mean(sim_list_sorted[-3:])
+            label_to_max_sim[label] = max_sim
+        sorted_label_to_max_sim = list(sorted(label_to_max_sim.items(), key=lambda x: x[1]))
+        label, max_sim = sorted_label_to_max_sim[-1]
+        sim_diff = sorted_label_to_max_sim[-1][-1] - sorted_label_to_max_sim[0][-1]
+        return label, max_sim, sim_diff
 
-    for given_label in range(num_classes):
-        gt_grad_list = train_gradients[given_label][given_label]
+    ### for a given unlabeled example,
+    ### try both labels and see which gradient produced is closer to an existing gradient
+    predicted_labels = []
+    sim_diff_list = []
+    for i in range(ul_inputs.shape[0]):
+        given_label_to_grad = {k: v[i] for k, v in ul_grad_np_dict.items()}
+        predicted_label, max_sim, sim_diff = get_grad_comparison(given_label_to_grad, train_label_to_grads)
+        predicted_labels.append(predicted_label)
+        sim_diff_list.append(sim_diff)
 
-        correct_gt_label = given_label
-        correct_candidate_grad_list = ul_gradients[correct_gt_label][given_label]
+    predicted_labels = np.asarray(predicted_labels)
+    acc = accuracy_score(ul_y, predicted_labels)
+    sim_diff_threshold_idx = int(len(sim_diff_list) / 100)
+    sim_diff_threshold = list(sorted(sim_diff_list))[-sim_diff_threshold_idx]
 
-        wrong_gt_label = 0 if given_label == 1 else 1
-        wrong_candidate_grad_list = ul_gradients[wrong_gt_label][given_label]
-
-        correct_agreement_list = utils_grad.get_agreement_list_avg(gt_grad_list, correct_candidate_grad_list)
-        wrong_agreement_list = utils_grad.get_agreement_list_avg(gt_grad_list, wrong_candidate_grad_list)
-
-        output_file = Path(f"plots/agreement_dist_avg_given={given_label}.png")
-        utils_grad.plot_jasons_histogram(correct_agreement_list, wrong_agreement_list, output_file)
-        print(gt_label, given_label, mean(correct_agreement_list), mean(wrong_agreement_list))
-
-        # ######## validation ########
-        
-        # minibatch_size = 128
-        # num_minibatches_val = int(test_x.shape[0] / minibatch_size)
-        # model.train(mode=False)
-        # val_running_loss, val_running_corrects = 0.0, 0
-
-        # for minibatch_num in range(num_minibatches_val):
-            
-        #     start_idx = minibatch_num * minibatch_size
-        #     end_idx = start_idx + minibatch_size
-        #     val_inputs = torch.from_numpy(test_x[start_idx:end_idx].astype(np.float32))
-        #     val_labels = torch.from_numpy(test_y[start_idx:end_idx].astype(np.long))
-
-        #     # Feed forward.
-        #     with torch.set_grad_enabled(mode=False):
-        #         val_outputs = model(val_inputs)
-        #         _, val_preds = torch.max(val_outputs, dim=1)
-        #         val_loss = criterion(input=val_outputs, target=val_labels)
-        #     val_running_loss += val_loss.item() * val_inputs.size(0)
-        #     val_running_corrects += int(torch.sum(val_preds == val_labels.data, dtype=torch.double))
-
-        # val_loss = val_running_loss / (num_minibatches_val * minibatch_size)
-        # val_acc = val_running_corrects / (num_minibatches_val * minibatch_size)
-
-        # print(f"{val_loss:.3f},{val_acc:.3f}\n")
+    confident_predicted_labels = [predicted_labels[i] for i in range(len(sim_diff_list)) if sim_diff_list[i] >= sim_diff_threshold]
+    confident_ul_y = [ul_y[i] for i in range(len(sim_diff_list)) if sim_diff_list[i] >= sim_diff_threshold]
+    conf_acc = accuracy_score(confident_ul_y, confident_predicted_labels)
 
     gc.collect()
+    return acc, conf_acc
 
 def train_mlp_multiple(  
                         train_txt_path,
@@ -180,9 +166,12 @@ def train_mlp_multiple(
                         criterion = nn.CrossEntropyLoss(),
                         ):
 
+    acc_list = []
+    conf_acc_list = []
+
     for seed_num in range(num_seeds):
 
-        train_mlp_checkpoint(  
+        acc, conf_acc = train_mlp_checkpoint(  
             train_txt_path,
             train_embedding_path,
             test_txt_path,
@@ -195,3 +184,7 @@ def train_mlp_multiple(
             criterion,
             checkpoint_folder = Path(f"checkpoints/{dataset_name}_{exp_id}")
             )
+        acc_list.append(acc)
+        conf_acc_list.append(conf_acc)
+    
+    return mean(acc_list), stdev(acc_list), mean(conf_acc_list), stdev(conf_acc_list)

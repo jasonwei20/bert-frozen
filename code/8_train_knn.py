@@ -6,6 +6,7 @@ data_folder = config.data_folders[dataset_name]
 output_folder = Path("outputs")
 exp_id = 'vanilla'
 num_classes = 2
+train_size = 50
 
 if __name__ == "__main__":
 
@@ -19,6 +20,7 @@ if __name__ == "__main__":
                                                                 output_folder,
                                                                 exp_id,
                                                                 num_seeds=10,
+                                                                train_size=train_size,
                                                                 )
                 
     print(f"{mean_val_acc:.3f},{stdev_acc:.3f}")

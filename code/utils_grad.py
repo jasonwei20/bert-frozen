@@ -1,5 +1,40 @@
 import utils_autograd_hacks as autograd_hacks
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+from statistics import mean
+
+def plot_jasons_histogram(	
+    l_1,
+    l_2, 
+    output_png_path, 
+    x_label='Value', 
+    y_label='Frequency', 
+    num_bins=200,
+    # colors=['blue', 'red'],
+    classes=['Label'],
+    ):
+
+    _, ax = plt.subplots()	
+    plt.hist([l_1, l_2], num_bins, density=False, label=classes)
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    ax.legend(prop={'size': 10})
+    
+    plt.savefig(output_png_path, dpi=400)
+    plt.clf()
+
+def get_agreement_list_avg(gt_grad_list, candidate_grad_list):
+    agreement_list = []
+    for candidate_grad in candidate_grad_list:
+        candidate_grad_agreement = []
+        for gt_grad in gt_grad_list:
+            agreement = np.dot(candidate_grad, gt_grad)
+            candidate_grad_agreement.append(agreement)
+        agreement_list.append(mean(candidate_grad_agreement))
+    return agreement_list
 
 def get_agreement_list_all(gt_grad_list, candidate_grad_list):
     agreement_list = []
@@ -50,6 +85,13 @@ def get_idx_to_grad(model, global_normalize=True):
 
     return idx_to_grad_flatten
 
+def get_grad_np(model, global_normalize):
+
+    idx_to_grad_flatten = get_idx_to_grad(model, global_normalize)
+    grad_np = np.zeros((len(idx_to_grad_flatten), idx_to_grad_flatten[0].shape[0]))
+    for idx, grad in idx_to_grad_flatten.items():
+        grad_np[idx] = grad
+    return grad_np
 
 ######################################################
 # Weighting and ranking
