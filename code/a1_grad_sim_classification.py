@@ -6,7 +6,7 @@ data_folder = config.data_folders[dataset_name]
 output_folder = Path("outputs")
 exp_id = '9b'
 num_classes = 2
-resume_checkpoint_path = Path("checkpoints/sst2_small/e0.pt")
+resume_checkpoint_path = None#Path("checkpoints/sst2_small/e0.pt")
 
 if __name__ == "__main__":
 

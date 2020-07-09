@@ -6,7 +6,7 @@ data_folder = config.data_folders[dataset_name]
 output_folder = Path("outputs")
 exp_id = 'vanilla'
 num_classes = 2
-train_subset = 50
+train_subset = 20
 minibatch_size = 5
 
 if __name__ == "__main__":

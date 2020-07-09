@@ -29,7 +29,8 @@ class Net(nn.Module):
         x = self.fc1(x)
         # x = self.relu1(x)
         # x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
+        # output = F.softmax(x, dim=1)
+        output = torch.sigmoid(x)
         return output
 
 def train_mlp_checkpoint(  
@@ -77,91 +78,95 @@ def train_mlp_checkpoint(
     optimizer.zero_grad()
     train_gradients = {k: {k:[] for k in range(num_classes)} for k in range(num_classes)}
 
-    with torch.set_grad_enabled(mode=True):
-        train_outputs = model(train_inputs)
-        __, train_preds = torch.max(train_outputs, dim=1)
-        train_loss = criterion(input=train_outputs, target=train_labels)
-        train_loss.backward(retain_graph=True)
-        autograd_hacks.compute_grad1(model)
+    for _ in range(10):
 
-        # optimizer.step()
-
-        idx_to_grad = utils_grad.get_idx_to_grad(model, global_normalize=True)
-        for idx, gradient in idx_to_grad.items():
-            gt_label = int(train_labels[idx])
-            given_label = gt_label
-            train_gradients[gt_label][given_label].append(gradient)
-        
-        autograd_hacks.clear_backprops(model)
-        # print('\n', idx_to_grad[1][-5:])
-
-    ######## ul ########
-    ul_inputs = torch.from_numpy(ul_x.astype(np.float32))
-    ul_labels = torch.from_numpy(ul_y.astype(np.long))
-    optimizer.zero_grad()
-    ul_gradients = {k: {k:[] for k in range(num_classes)} for k in range(num_classes)}
-
-    for given_label in range(num_classes):
-
-        # Forward and backpropagation.
         with torch.set_grad_enabled(mode=True):
-            ul_outputs = model(ul_inputs)
-            __, ul_preds = torch.max(ul_outputs, dim=1)
-            given_ul_labels = torch.from_numpy((np.zeros(ul_labels.shape) + given_label).astype(np.long))
-            ul_loss = criterion(input=ul_outputs, target=given_ul_labels)
-            ul_loss.backward(retain_graph=True)
+            train_outputs = model(train_inputs)
+            __, train_preds = torch.max(train_outputs, dim=1)
+            train_loss = criterion(input=train_outputs, target=train_labels)
+            train_loss.backward(retain_graph=True)
             autograd_hacks.compute_grad1(model)
 
-            idx_to_grad = utils_grad.get_idx_to_grad(model)
+            optimizer.step()
+
+            idx_to_grad = utils_grad.get_idx_to_grad(model, global_normalize=True)
+            print(idx_to_grad[1][:5])
             for idx, gradient in idx_to_grad.items():
-                gt_label = int(ul_labels[idx])
-                ul_gradients[gt_label][given_label].append(gradient)
-
-            # optimizer.step()
-            autograd_hacks.clear_backprops(model)
-
-    for given_label in range(num_classes):
-        gt_grad_list = train_gradients[given_label][given_label]
-
-        correct_gt_label = given_label
-        correct_candidate_grad_list = ul_gradients[correct_gt_label][given_label]
-
-        wrong_gt_label = 0 if given_label == 1 else 1
-        wrong_candidate_grad_list = ul_gradients[wrong_gt_label][given_label]
-
-        correct_agreement_list = utils_grad.get_agreement_list_avg(gt_grad_list, correct_candidate_grad_list)
-        wrong_agreement_list = utils_grad.get_agreement_list_avg(gt_grad_list, wrong_candidate_grad_list)
-
-        output_file = Path(f"plots/agreement_dist_avg_given={given_label}.png")
-        utils_grad.plot_jasons_histogram(correct_agreement_list, wrong_agreement_list, output_file)
-        print(gt_label, given_label, mean(correct_agreement_list), mean(wrong_agreement_list))
-
-        # ######## validation ########
-        
-        # minibatch_size = 128
-        # num_minibatches_val = int(test_x.shape[0] / minibatch_size)
-        # model.train(mode=False)
-        # val_running_loss, val_running_corrects = 0.0, 0
-
-        # for minibatch_num in range(num_minibatches_val):
+                gt_label = int(train_labels[idx])
+                given_label = gt_label
+                train_gradients[gt_label][given_label].append(gradient)
             
-        #     start_idx = minibatch_num * minibatch_size
-        #     end_idx = start_idx + minibatch_size
-        #     val_inputs = torch.from_numpy(test_x[start_idx:end_idx].astype(np.float32))
-        #     val_labels = torch.from_numpy(test_y[start_idx:end_idx].astype(np.long))
+            autograd_hacks.clear_backprops(model)
+            # print('\n', idx_to_grad[1][-5:])
 
-        #     # Feed forward.
-        #     with torch.set_grad_enabled(mode=False):
-        #         val_outputs = model(val_inputs)
-        #         _, val_preds = torch.max(val_outputs, dim=1)
-        #         val_loss = criterion(input=val_outputs, target=val_labels)
-        #     val_running_loss += val_loss.item() * val_inputs.size(0)
-        #     val_running_corrects += int(torch.sum(val_preds == val_labels.data, dtype=torch.double))
+        # ######## ul ########
+        ul_inputs = torch.from_numpy(ul_x.astype(np.float32))
+        ul_labels = torch.from_numpy(ul_y.astype(np.long))
+        optimizer.zero_grad()
+        ul_gradients = {k: {k:[] for k in range(num_classes)} for k in range(num_classes)}
 
-        # val_loss = val_running_loss / (num_minibatches_val * minibatch_size)
-        # val_acc = val_running_corrects / (num_minibatches_val * minibatch_size)
+        for given_label in range(num_classes):
 
-        # print(f"{val_loss:.3f},{val_acc:.3f}\n")
+            # Forward and backpropagation.
+            with torch.set_grad_enabled(mode=True):
+                ul_outputs = model(ul_inputs)
+                __, ul_preds = torch.max(ul_outputs, dim=1)
+                given_ul_labels = torch.from_numpy((np.zeros(ul_labels.shape) + given_label).astype(np.long))
+                ul_loss = criterion(input=ul_outputs, target=given_ul_labels)
+                ul_loss.backward(retain_graph=True)
+                autograd_hacks.compute_grad1(model)
+
+                idx_to_grad = utils_grad.get_idx_to_grad(model)
+                print(idx_to_grad[1][:5])
+                for idx, gradient in idx_to_grad.items():
+                    gt_label = int(ul_labels[idx])
+                    ul_gradients[gt_label][given_label].append(gradient)
+
+                # optimizer.step()
+                autograd_hacks.clear_backprops(model)
+
+    # for given_label in range(num_classes):
+    #     gt_grad_list = train_gradients[given_label][given_label]
+
+    #     correct_gt_label = given_label
+    #     correct_candidate_grad_list = ul_gradients[correct_gt_label][given_label]
+
+    #     wrong_gt_label = 0 if given_label == 1 else 1
+    #     wrong_candidate_grad_list = ul_gradients[wrong_gt_label][given_label]
+
+    #     correct_agreement_list = utils_grad.get_agreement_list_avg(gt_grad_list, correct_candidate_grad_list)
+    #     wrong_agreement_list = utils_grad.get_agreement_list_avg(gt_grad_list, wrong_candidate_grad_list)
+
+    #     output_file = Path(f"plots/agreement_dist_avg_given={given_label}.png")
+    #     utils_grad.plot_jasons_histogram(correct_agreement_list, wrong_agreement_list, output_file)
+    #     print(gt_label, given_label, mean(correct_agreement_list), mean(wrong_agreement_list))
+
+        ####### validation ########
+        
+        minibatch_size = 128
+        num_minibatches_val = int(test_x.shape[0] / minibatch_size)
+        model.train(mode=False)
+        val_running_loss, val_running_corrects = 0.0, 0
+
+        for minibatch_num in range(num_minibatches_val):
+            
+            start_idx = minibatch_num * minibatch_size
+            end_idx = start_idx + minibatch_size
+            val_inputs = torch.from_numpy(test_x[start_idx:end_idx].astype(np.float32))
+            val_labels = torch.from_numpy(test_y[start_idx:end_idx].astype(np.long))
+
+            # Feed forward.
+            with torch.set_grad_enabled(mode=False):
+                val_outputs = model(val_inputs)
+                _, val_preds = torch.max(val_outputs, dim=1)
+                val_loss = criterion(input=val_outputs, target=val_labels)
+            val_running_loss += val_loss.item() * val_inputs.size(0)
+            val_running_corrects += int(torch.sum(val_preds == val_labels.data, dtype=torch.double))
+
+        val_loss = val_running_loss / (num_minibatches_val * minibatch_size)
+        val_acc = val_running_corrects / (num_minibatches_val * minibatch_size)
+
+        print(f"{val_loss:.3f},{val_acc:.3f}\n")
 
     gc.collect()
 

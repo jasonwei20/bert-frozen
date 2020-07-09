@@ -25,7 +25,8 @@ class Net(nn.Module):
     
     def forward(self, x):
         x = self.fc1(x)
-        output = F.log_softmax(x, dim=1)
+        output = torch.sigmoid(x)
+        # output = F.softmax(x, dim=1)
         return output
 
 def train_mlp_checkpoint(  

@@ -4,12 +4,10 @@ from pathlib import Path
 dataset_name = 'sst2'
 data_folder = config.data_folders[dataset_name]
 output_folder = Path("outputs")
-exp_id = '9a'
+exp_id = '9b'
 num_classes = 2
 train_subset = 20
-train_minibatch_size = 5
-ul_minibatch_size = 128
-resume_checkpoint_path = Path("checkpoints/sst2_vanilla/e1_va0.8362.pt")
+resume_checkpoint_path = None #Path("checkpoints/sst2_small/e0.pt")
 
 if __name__ == "__main__":
 
@@ -25,8 +23,6 @@ if __name__ == "__main__":
         exp_id = exp_id,
         train_subset = train_subset,
         resume_checkpoint_path = resume_checkpoint_path,
-        train_minibatch_size = train_minibatch_size,
-        ul_minibatch_size = ul_minibatch_size,
         num_seeds = 1,
         )
                 

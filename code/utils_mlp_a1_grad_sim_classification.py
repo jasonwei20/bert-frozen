@@ -17,20 +17,31 @@ import utils_grad
 import utils_processing
 import utils_mlp_helper
 
-class Net(nn.Module):
+class LR(nn.Module):
 
     def __init__(self, num_classes):
-        super(Net, self).__init__()
-        self.fc1 = nn.Linear(768, num_classes)
-        # self.fc1 = nn.Linear(768, 50)
-        # self.relu1 = nn.ReLU()
-        # self.fc2 = nn.Linear(50, num_classes)
+        super(LR, self).__init__()
+        self.fc1 = nn.Linear(768, 2)
     
     def forward(self, x):
         x = self.fc1(x)
-        # x = self.relu1(x)
-        # x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
+        output = torch.sigmoid(x)
+        # output = torch.softmax(x, dim=1)
+        return output
+
+class MLP(nn.Module):
+
+    def __init__(self, num_classes):
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(768, 50)
+        self.relu1 = nn.Tanh()
+        self.fc2 = nn.Linear(50, num_classes)
+    
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.relu1(x)
+        x = self.fc2(x)
+        output = torch.sigmoid(x)
         return output
 
 def train_mlp_checkpoint(  
@@ -58,7 +69,7 @@ def train_mlp_checkpoint(
 
     # print(train_x.shape, train_y.shape, ul_x.shape, ul_y.shape, test_x.shape, test_y.shape)
 
-    model = Net(num_classes=num_classes)
+    model = MLP(num_classes=num_classes)
     optimizer = optim.Adam(params=model.parameters(), lr=0.001, weight_decay=0.05) #wow, works for even large learning rates
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.9)
     
@@ -111,6 +122,7 @@ def train_mlp_checkpoint(
             autograd_hacks.compute_grad1(model)
 
             grad_np = utils_grad.get_grad_np(model, global_normalize=True)
+            # print(grad_np[1, :5])
             ul_grad_np_dict[given_label] = grad_np
 
             # optimizer.step()
@@ -122,7 +134,7 @@ def train_mlp_checkpoint(
             grad_from_given_label = given_label_to_grad[label]
             sim_list = [np.dot(grad_from_given_label, train_grad) for train_grad in train_grads]
             sim_list_sorted = list(sorted(sim_list))
-            max_sim = mean(sim_list_sorted[-3:])
+            max_sim = mean(sim_list_sorted)
             label_to_max_sim[label] = max_sim
         sorted_label_to_max_sim = list(sorted(label_to_max_sim.items(), key=lambda x: x[1]))
         label, max_sim = sorted_label_to_max_sim[-1]
@@ -141,7 +153,7 @@ def train_mlp_checkpoint(
 
     predicted_labels = np.asarray(predicted_labels)
     acc = accuracy_score(ul_y, predicted_labels)
-    sim_diff_threshold_idx = int(len(sim_diff_list) / 100)
+    sim_diff_threshold_idx = int(len(sim_diff_list) / 10)
     sim_diff_threshold = list(sorted(sim_diff_list))[-sim_diff_threshold_idx]
 
     confident_predicted_labels = [predicted_labels[i] for i in range(len(sim_diff_list)) if sim_diff_list[i] >= sim_diff_threshold]
