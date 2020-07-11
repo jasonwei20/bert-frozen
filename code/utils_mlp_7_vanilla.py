@@ -17,16 +17,31 @@ import utils_grad
 import utils_processing
 import utils_mlp_helper
 
-class Net(nn.Module):
+# class LR(nn.Module):
+
+#     def __init__(self, num_classes):
+#         super(LR, self).__init__()
+#         self.fc1 = nn.Linear(768, 2)
+    
+#     def forward(self, x):
+#         x = self.fc1(x)
+#         output = torch.sigmoid(x)
+#         # output = torch.softmax(x, dim=1)
+#         return output
+
+class MLP(nn.Module):
 
     def __init__(self, num_classes):
-        super(Net, self).__init__()
-        self.fc1 = nn.Linear(768, num_classes)
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(768, 50)
+        self.relu1 = nn.Tanh()
+        self.fc2 = nn.Linear(50, num_classes)
     
     def forward(self, x):
         x = self.fc1(x)
+        x = self.relu1(x)
+        x = self.fc2(x)
         output = torch.sigmoid(x)
-        # output = F.softmax(x, dim=1)
         return output
 
 def train_mlp_checkpoint(  
@@ -54,7 +69,7 @@ def train_mlp_checkpoint(
 
     # print(train_x.shape, train_y.shape, test_x.shape, test_y.shape)
 
-    model = Net(num_classes=num_classes)
+    model = MLP(num_classes=num_classes)
     optimizer = optim.Adam(params=model.parameters(), lr=0.001, weight_decay=0.05) #wow, works for even large learning rates
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.9)
     autograd_hacks.add_hooks(model)
@@ -143,17 +158,17 @@ def train_mlp_checkpoint(
 
         # print(f"{train_loss:.3f},{train_acc:.3f},{val_loss_print:.3f},{val_acc:.3f}\n")
 
-        # if checkpoint_folder:
+        if checkpoint_folder:
 
-        #     epoch_output_path = checkpoint_folder.joinpath(f"e{epoch}_va{val_acc:.4f}.pt")
-        #     epoch_output_path.parent.mkdir(parents=True, exist_ok=True)
+            epoch_output_path = checkpoint_folder.joinpath(f"e{epoch}_va{val_acc:.4f}.pt")
+            epoch_output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        #     torch.save(obj={
-        #                     "model_state_dict": model.state_dict(),
-        #                     "optimizer_state_dict": optimizer.state_dict(),
-        #                     "scheduler_state_dict": scheduler.state_dict(),
-        #                     "epoch": epoch,
-        #                 }, f=str(epoch_output_path))
+            torch.save(obj={
+                            "model_state_dict": model.state_dict(),
+                            "optimizer_state_dict": optimizer.state_dict(),
+                            "scheduler_state_dict": scheduler.state_dict(),
+                            "epoch": epoch,
+                        }, f=str(epoch_output_path))
 
     gc.collect()
     return mean(val_acc_list[-5:]), mean(conf_acc_list[-5:])
@@ -188,7 +203,7 @@ def train_mlp_multiple(
                             minibatch_size,
                             num_epochs,
                             criterion,
-                            checkpoint_folder = Path(f"checkpoints/{dataset_name}_{exp_id}")
+                            checkpoint_folder = Path(f"checkpoints/{dataset_name}_{exp_id}_{train_subset}_seednum{seed_num}")
                             )
 
         val_acc_list.append(val_acc)
