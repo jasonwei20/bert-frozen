@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 import gc
 
 import utils_autograd_hacks as autograd_hacks
+import utils_common
 import utils_grad
 import utils_processing
 import utils_mlp_helper
@@ -64,7 +65,7 @@ def train_mlp_checkpoint(
     np.random.seed(seed_num)
     
     train_x, train_y = utils_processing.get_x_y(train_txt_path, train_embedding_path)
-    test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
+    # test_x, test_y = utils_processing.get_x_y(test_txt_path, test_embedding_path)
     if train_subset:
         train_x, ul_x, train_y, ul_y = train_test_split(train_x, train_y, train_size=train_subset, random_state=seed_num, stratify=train_y)
         test_x = ul_x; test_y = ul_y
@@ -138,6 +139,8 @@ def train_mlp_checkpoint(
 
         # print(f"trained model has val acc {val_acc:.4f}, {conf_acc:.4f}")
 
+    print(val_outputs.shape)
+
     ######## get train gradients ########
     model.train(mode=True)
     train_label_to_grads = {label: [] for label in range(num_classes)}
@@ -190,18 +193,27 @@ def train_mlp_checkpoint(
             sim_list_sorted = list(sorted(sim_list))
             max_sim = mean(sim_list_sorted)
             label_to_max_sim[label] = max_sim
+        signed_sim_diff = label_to_max_sim[1] - label_to_max_sim[0]
         sorted_label_to_max_sim = list(sorted(label_to_max_sim.items(), key=lambda x: x[1]))
         label, max_sim = sorted_label_to_max_sim[-1]
         sim_diff = sorted_label_to_max_sim[-1][-1] - sorted_label_to_max_sim[0][-1]
-        return label, max_sim, sim_diff
+        return label, max_sim, sim_diff, signed_sim_diff
 
     predicted_labels = []
     sim_diff_list = []
+
+    val_conf_i_list = []; signed_sim_diff_list = []
+
     for i in range(ul_inputs.shape[0]):
         given_label_to_grad = {k: v[i] for k, v in ul_grad_np_dict.items()}
-        predicted_label, max_sim, sim_diff = get_grad_comparison(given_label_to_grad, train_label_to_grads)
+        predicted_label, max_sim, sim_diff, signed_sim_diff = get_grad_comparison(given_label_to_grad, train_label_to_grads)
         predicted_labels.append(predicted_label)
         sim_diff_list.append(sim_diff)
+    
+        val_conf_i_list.append(float(val_outputs[i, 0]))
+        signed_sim_diff_list.append(signed_sim_diff)
+
+    utils_common.plot_jasons_scatterplot(val_conf_i_list, signed_sim_diff_list, 'plots/conf_and_grad_sim_500.png', 'Confidence', 'Grad Sim - Mean', 'Confidence and Grad Sim - Mean')
 
     predicted_labels = np.asarray(predicted_labels)
     acc = accuracy_score(ul_y, predicted_labels)
